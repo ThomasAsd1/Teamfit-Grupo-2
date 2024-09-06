@@ -1,0 +1,199 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block titlePage %}
+Teamfit - Subir Empleados
+{% endblock titlePage %}
+{% block content %}
+  {% block estiloHead %}
+  <!-- Estilos y scripts -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <style>
+    .container_a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .form-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 600px;
+        margin-bottom: 20px;
+    }
+
+    .box {
+        width: 80%;
+        height: 20%;
+        border: 2px dotted black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background-color: #f5f5dc;
+    }
+  </style>
+  {% endblock estiloHead %}
+
+  <div class="container">
+    <h1 class="predictor-title text-center" style="font-family: Arial, sans-serif; padding: 10px;">
+      Subir Empleados
+    </h1>
+    <p class="text-center">
+      Agregue los empleados de forma manual o cargue un archivo para actualizar la base de datos.
+    </p>
+
+    <!-- Formulario de carga de archivos -->
+    <div class="container_a">
+      <div class="box">
+        <div class="text-center mb-4">
+          <br>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form }}
+            <br>
+            <button type="submit" class="btn btn-primary">Subir archivo</button>
+          </form>
+          {% if mesg %}
+            <hr style="opacity: 100%;">
+            <p>{{ mesg|safe }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <br>
+
+    <!-- Formulario de carga manual -->
+    <div class="form-container">
+      <form method="post" action="{% url 'subir_empleados' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="id_empleado">ID Empleado</label>
+          <input type="text" class="form-control" id="id_empleado" name="id_empleado" required>
+        </div>
+        <div class="form-group">
+          <label for="nombre">Nombre</label>
+          <input type="text" class="form-control" id="nombre" name="nombre" required>
+        </div>
+        <div class="form-group">
+          <label for="cargo">Cargo</label>
+          <input type="text" class="form-control" id="cargo" name="cargo" required>
+        </div>
+        <div class="form-group">
+          <label for="telefono">Teléfono</label>
+          <input type="text" class="form-control" id="telefono" name="telefono" required>
+        </div>
+        <div class="form-group">
+          <label for="categoria">Categoría</label>
+          <input type="text" class="form-control" id="categoria" name="categoria" required>
+        </div>
+        <div class="form-group">
+          <label for="horas_laborales">Horas Laborales</label>
+          <input type="number" class="form-control" id="horas_laborales" name="horas_laborales" required>
+        </div>
+        <div class="form-group">
+          <label for="disponibilidad">Disponibilidad</label>
+          <input type="text" class="form-control" id="disponibilidad" name="disponibilidad" required>
+        </div>
+        <div class="form-group">
+          <label for="estado">Estado</label>
+          <input type="text" class="form-control" id="estado" name="estado" required>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-success">Agregar Empleado</button>
+      </form>
+    </div>
+    <br>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-lg" id="dataModal" tabindex="-1" role="dialog" aria-labelledby="dataModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dataModalLabel">Empleados a Subir</h5>
+          </div>
+          {% if mesg %}
+          <br>
+          <div class="text-center">
+            <p>{{mesg|safe}}</p>
+          </div>
+          <hr style="opacity: 100%;">
+          {% endif %}
+          <div class="modal-body">
+            {% if showTable %}
+            <div class="table-responsive">
+              <table id="basic-datatables" class="display table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID Empleado</th>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Teléfono</th>
+                    <th>Categoría</th>
+                    <th>Horas Laborales</th>
+                    <th>Disponibilidad</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for empleado in empleados %}
+                  <tr>
+                    <td>{{ empleado.id_empleado }}</td>
+                    <td>{{ empleado.nombre }}</td>
+                    <td>{{ empleado.cargo }}</td>
+                    <td>{{ empleado.telefono }}</td>
+                    <td>{{ empleado.categoria }}</td>
+                    <td>{{ empleado.horas_laborales }}</td>
+                    <td>{{ empleado.disponibilidad }}</td>
+                    <td>{{ empleado.estado }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="8">No hay empleados disponibles</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer d-flex justify-content-center">
+            <a href="{% url 'subir_empleados' %}">
+              <button type="button" class="btn btn-danger">Volver</button>
+            </a>
+            {% if validado %}
+            <a href="{% url 'subir_empleados' %}">
+              <button type="button" class="btn btn-success">Subir Empleados</button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts para mostrar el modal -->
+    {% if showTable %}
+    <script>
+      $(document).ready(function() {
+          $('#dataModal').modal('show');
+      });
+    </script>
+    {% endif %}
+  </div>
+{% endblock content %}
+
+{% block UJS %}
+<script src="{% static 'core/js/plugin/datatables/datatables.min.js' %}"></script>
+<script>
+  $(document).ready(function () {
+    $("#basic-datatables").DataTable({});
+  });
+</script>
+{% endblock UJS %}

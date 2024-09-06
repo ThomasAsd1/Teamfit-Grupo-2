@@ -1,0 +1,244 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block titlePage %}
+Teamfit - Subir Proyectos
+{% endblock titlePage %}
+{% block content %}
+  {% block estiloHead %}
+  <!-- Estilos y scripts -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <style>
+    .container_a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .form-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 600px;
+        margin-bottom: 20px;
+    }
+
+    .box {
+        width: 80%;
+        height: 20%;
+        border: 2px dotted black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background-color: #f5f5dc;
+    }
+  </style>
+  {% endblock estiloHead %}
+
+  <div class="container">
+    <h1 class="predictor-title text-center" style="font-family: Arial, sans-serif; padding: 10px;">
+      Subir Proyectos
+    </h1>
+    <p class="text-center">
+      Agregue los proyectos de forma manual, para predecir la carga de horas de<br>
+      su equipo profesional en base a la estimación de ventas.
+    </p>
+
+    <!-- Formulario de carga de archivos -->
+    <div class="container_a">
+      <div class="box">
+        <div class="text-center mb-4">
+          <br>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form }}
+            <br>
+            <button type="submit" class="btn btn-primary">Subir archivo</button>
+          </form>
+          {% if mesg %}
+            <hr style="opacity: 100%;">
+            <p>{{ mesg|safe }}</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <br>
+
+    <!-- Formulario de carga manual -->
+    <div class="form-container">
+      <form method="post" action="{% url 'subirProyectos' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="id_proyecto">ID Proyecto</label>
+          <input type="text" class="form-control" id="id_proyecto" name="id_proyecto" required>
+        </div>
+        <div class="form-group">
+          <label for="proyecto">Proyecto</label>
+          <input type="text" class="form-control" id="proyecto" name="proyecto" required>
+        </div>
+        <div class="form-group">
+          <label for="lineaNegocio">Línea de Negocio</label>
+          <input type="text" class="form-control" id="lineaNegocio" name="lineaNegocio" required>
+        </div>
+        <div class="form-group">
+          <label for="tipo">Tipo</label>
+          <input type="text" class="form-control" id="tipo" name="tipo" required>
+        </div>
+        <div class="form-group">
+          <label for="cliente">Cliente</label>
+          <input type="text" class="form-control" id="cliente" name="cliente" required>
+        </div>
+        <div class="form-group">
+          <label for="createDate">Fecha de Creación</label>
+          <input type="date" class="form-control" id="createDate" name="createDate" required>
+        </div>
+        <div class="form-group">
+          <label for="cierre">Fecha de Cierre</label>
+          <input type="date" class="form-control" id="cierre" name="cierre" required>
+        </div>
+        <div class="form-group">
+          <label for="egresosNoHHCLP">Egresos No HH CLP</label>
+          <input type="number" class="form-control" id="egresosNoHHCLP" name="egresosNoHHCLP" required>
+        </div>
+        <div class="form-group">
+          <label for="montoOfertaCLP">Monto Oferta CLP</label>
+          <input type="number" class="form-control" id="montoOfertaCLP" name="montoOfertaCLP" required>
+        </div>
+        <div class="form-group">
+          <label for="usoAgencia">Uso Agencia</label>
+          <select class="form-control" id="usoAgencia" name="usoAgencia" required>
+            <option value="True">Sí</option>
+            <option value="False">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ocupacionInicio">Ocupación Al Iniciar (%)</label>
+          <input type="number" class="form-control" id="ocupacionInicio" name="ocupacionInicio" required>
+        </div>
+        <br>
+        <button type="submit" class="btn btn-success">Agregar Proyecto</button>
+      </form>
+    </div>
+    <br>
+
+    <!-- Modal -->
+    <div class="modal fade bd-example-modal-lg" id="dataModal" tabindex="-1" role="dialog" aria-labelledby="dataModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="dataModalLabel">Proyectos a Subir</h5>
+          </div>
+          {% if mesg %}
+          <br>
+          <div class="text-center">
+            <p>{{mesg|safe}}</p>
+          </div>
+          <hr style="opacity: 100%;">
+          {% endif %}
+          <div class="modal-body">
+            {% if showTable %}
+            <div class="table-responsive">
+              <table id="basic-datatables" class="display table table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Proyecto</th>
+                    <th>Tipo</th>
+                    <th>Línea de trabajo</th>
+                    <th>P.A.E</th>
+                    <th>Carga Trabajo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for proyectos in proyectos %}
+                  <tr>
+                    <td>{{ proyectos.id }}</td>
+                    <td>{{ proyectos.proyecto }}</td>
+                    <td>{{ proyectos.tipo }}</td>
+                    <td>{{ proyectos.lineaNegocio }}</td>
+                    <td>{{ proyectos.usoAgencia|yesno:"Sí,No" }}</td>
+                    <td>{{ proyectos.ocupacionInicio }}</td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="6">No hay productos disponibles</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% endif %}
+          </div>
+          <div class="modal-footer d-flex justify-content-center">
+            <a href="{% url 'decidirSubida' 'Can' %}">
+              <button type="button" class="btn btn-danger">Volver</button>
+            </a>
+            {% if validado %}
+            <a href="{% url 'decidirSubida' 'Up' %}">
+              <button type="button" class="btn btn-success">Subir Proyectos</button>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts para mostrar el modal -->
+    {% if showTable %}
+    <script>
+      $(document).ready(function() {
+          $('#dataModal').modal('show');
+      });
+    </script>
+    {% endif %}
+  </div>
+{% endblock content %}
+
+{% block UJS %}
+<script src="{% static 'core/js/plugin/datatables/datatables.min.js' %}"></script>
+<script>
+  $(document).ready(function () {
+    $("#basic-datatables").DataTable({});
+
+    $("#multi-filter-select").DataTable({
+      pageLength: 5,
+      initComplete: function () {
+        this.api()
+          .columns()
+          .every(function () {
+            var column = this;
+            var select = $(
+              '<select class="form-select"><option value=""></option></select>'
+            )
+              .appendTo($(column.footer()).empty())
+              .on("change", function () {
+                var val = $.fn.dataTable.util.escapeRegex($(this).val());
+
+                column.search(val ? "^" + val + "$" : "", true, false).draw();
+              });
+
+            column
+              .data()
+              .unique()
+              .sort()
+              .each(function (d, j) {
+                select.append('<option value="' + d + '">' + d + "</option>");
+              });
+          });
+      },
+    });
+
+    // Add Row
+    $("#add-row").DataTable({
+      pageLength: 5,
+    });
+  });
+</script>
+{% endblock UJS %}

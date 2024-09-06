@@ -1,0 +1,151 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block titlePage %}
+Teamfit - Proyectos a Asignar Recursos
+{% endblock titlePage %}
+{% block content %}
+  <!-- Enlaces a Bootstrap y jQuery -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+  <!-- Estilos personalizados -->
+  <style>
+    .container {
+      margin-top: 20px;
+    }
+    .table-container {
+      margin: 20px auto;
+      max-width: 1200px;
+    }
+    .no-projects, .no-assignments {
+      text-align: center;
+      font-style: italic;
+    }
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+  </style>
+
+  <!-- Contenido -->
+  <div class="container">
+    <h1 class="text-center mb-4">
+      Proyectos a Asignar Recursos
+    </h1>
+
+    <!-- Mostrar proyectos que necesitan asignación -->
+    <h2 class="text-center mb-4">Proyectos</h2>
+    <div class="table-container">
+      {% if proyectos %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID Proyecto</th>
+                <th>Proyecto</th>
+                <th>Línea de Negocio</th>
+                <th>Tipo</th>
+                <th>Fecha de Creación</th>
+                <th>Fecha de Cierre</th>
+                <th>Egresos no HH CLP</th>
+                <th>Monto Oferta CLP</th>
+                <th>Uso Agencia</th>
+                <th>Ocupación Inicial</th>
+                <th>Disponibilidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for proyecto in proyectos %}
+                <tr>
+                  <td>{{ proyecto.id }}</td>
+                  <td>{{ proyecto.proyecto }}</td>
+                  <td>{{ proyecto.lineaNegocio }}</td>
+                  <td>{{ proyecto.tipo }}</td>
+                  <td>{{ proyecto.createDate }}</td>
+                  <td>{{ proyecto.cierre }}</td>
+                  <td>{{ proyecto.egresosNoHHCLP }}</td>
+                  <td>{{ proyecto.montoOfertaCLP }}</td>
+                  <td>{{ proyecto.usoAgencia }}</td>
+                  <td>{{ proyecto.ocupacionInicio }}</td>
+                  <td>{{ proyecto.disponibilidad }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-center no-projects">No hay proyectos para mostrar.</p>
+      {% endif %}
+    </div>
+
+    <!-- Mostrar asignaciones actuales -->
+    <h2 class="text-center mb-4">Asignaciones de Recursos</h2>
+    <div class="table-container">
+      {% if asignaciones %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID Asignación</th>
+                <th>Empleado</th>
+                <th>Proyecto</th>
+                <th>Horas Asignadas</th>
+                <th>Categoría</th>
+                <th>Estado Empleado</th>
+                <th>Disponibilidad Restante</th>
+                <th>Ocupación</th>
+                <th>Disponibilidad</th>
+                <th>Utilización</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for asignacion in asignaciones %}
+                <tr>
+                  <td>{{ asignacion.id }}</td>
+                  <td>{{ asignacion.empleado.nombre }}</td>
+                  <td>{{ asignacion.proyecto.proyecto }}</td>
+                  <td>{{ asignacion.horas_asignadas }}</td>
+                  <td>{{ asignacion.categoria }}</td>
+                  <td>{{ asignacion.estado_empleado }}</td>
+                  <td>{{ asignacion.disponibilidad_restante }}</td>
+                  <td>{{ asignacion.ocupacion }}</td>
+                  <td>{{ asignacion.disponibilidad }}</td>
+                  <td>{{ asignacion.utilizacion }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-center no-assignments">No hay asignaciones para mostrar.</p>
+      {% endif %}
+    </div>
+
+    <!-- Botones para acciones -->
+    <div class="btn-group">
+      <form method="post" action="{% url 'asignar_recursos' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Asignar Recursos</button>
+      </form>
+
+      <form method="post" action="{% url 'limpiar_asignaciones' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Limpiar Asignaciones</button>
+      </form>
+
+      <form method="post" action="{% url 'limpiar_proyectos' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-warning">Limpiar Proyectos</button>
+      </form>
+    </div>
+
+    <!-- Mostrar mensaje de éxito -->
+    {% if mensaje %}
+      <p class="text-center mt-4">{{ mensaje }}</p>
+    {% endif %}
+  </div>
+{% endblock content %}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignar Recursos</title>
+    <!-- Enlaces a Bootstrap y jQuery -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .card {
+            border-radius: 1rem;
+        }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .table thead th {
+            background-color: #007bff;
+            color: #ffffff;
+        }
+        .table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <header class="text-center mb-4">
+            <h1 class="header-title">Asignar Recursos</h1>
+        </header>
+        
+        <main>
+            <!-- Formulario para asignar recursos -->
+            <div class="text-center mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form method="post" action="{% url 'asignar_recursos' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-lg">Asignar Recursos</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            {% if proyectos %}
+                <!-- Tabla de proyectos a asignar -->
+                <h2 class="text-center mb-4">Proyectos a Asignar</h2>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID Proyecto</th>
+                                <th>Nombre Proyecto</th>
+                                <th>Horas Requeridas</th>
+                                <th>Empleados Asignados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for proyecto in proyectos %}
+                                <tr>
+                                    <td>{{ proyecto.id }}</td>
+                                    <td>{{ proyecto.nombre }}</td>
+                                    <td>{{ proyecto.horas_requeridas }}</td>
+                                    <td>
+                                        {% for asignacion in asignaciones %}
+                                            {% if asignacion.proyecto == proyecto %}
+                                                {{ asignacion.empleado.nombre }} ({{ asignacion.horas_asignadas }} horas)<br>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-center">No hay proyectos para asignar recursos en este momento.</p>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>
