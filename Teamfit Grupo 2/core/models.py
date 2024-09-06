@@ -1,5 +1,5 @@
 from django.db import models
-
+#test
 # Modelo TipoProyecto
 class TipoProyecto(models.Model):
     nombre = models.CharField(max_length=255)
