@@ -1,4 +1,3 @@
-# proyectos/management/commands/cargar_datos.py
 from django.core.management.base import BaseCommand
 from core.models import TipoProyecto, Recurso, Disponibilidad, Proyecto
 
@@ -7,24 +6,30 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Crear tipos de proyecto
-        tp1 = TipoProyecto.objects.create(nombre="Proyecto A", prioridad=3)
-        tp2 = TipoProyecto.objects.create(nombre="Proyecto B", prioridad=5)
-        tp3 = TipoProyecto.objects.create(nombre="Proyecto C", prioridad=1)
+        tp1 = TipoProyecto.objects.create(nombre="Alta", prioridad=3)
+        tp2 = TipoProyecto.objects.create(nombre="Media", prioridad=2)
+        tp3 = TipoProyecto.objects.create(nombre="Baja", prioridad=1)
 
         # Crear recursos
-        recurso1 = Recurso.objects.create(nombre="Recurso 1", rol="Developer", prioridad=2, horas_promedio=8)
-        recurso2 = Recurso.objects.create(nombre="Recurso 2", rol="Developer", prioridad=1, horas_promedio=8)
-        recurso3 = Recurso.objects.create(nombre="Recurso 3", rol="Tester", prioridad=3, horas_promedio=8)
+        for i in range(10):
+            Recurso.objects.create(nombre=f"Ingeniero {i+1}", rol="Ingeniero de Proyectos", prioridad=3, horas_promedio=8)
+
+        for i in range(2):
+            Recurso.objects.create(nombre=f"Jefe de Proyecto {i+1}", rol="Jefe de Proyecto", prioridad=3, horas_promedio=8)
 
         # Crear disponibilidad de recursos por semana
-        for semana in range(1, 53):
-            Disponibilidad.objects.create(recurso=recurso1, semana=semana, horas_disponibles=40)
-            Disponibilidad.objects.create(recurso=recurso2, semana=semana, horas_disponibles=40)
-            Disponibilidad.objects.create(recurso=recurso3, semana=semana, horas_disponibles=40)
+        for recurso in Recurso.objects.all():
+            for semana in range(1, 53):
+                Disponibilidad.objects.create(recurso=recurso, semana=semana, horas_disponibles=40)
 
         # Crear proyectos
-        proyecto1 = Proyecto.objects.create(nombre="Proyecto Alpha", tipo_proyecto=tp1, horas_demandadas=120, rol_requerido="Developer", semana=1)
-        proyecto2 = Proyecto.objects.create(nombre="Proyecto Beta", tipo_proyecto=tp2, horas_demandadas=200, rol_requerido="Developer", semana=2)
-        proyecto3 = Proyecto.objects.create(nombre="Proyecto Gamma", tipo_proyecto=tp3, horas_demandadas=80, rol_requerido="Tester", semana=1)
+        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=80, rol_requerido="Ingeniero de Proyectos", semana_inicio=1, duracion_semanas=26)
+        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=20, rol_requerido="Jefe de Proyecto", semana_inicio=1, duracion_semanas=26)
+        
+        Proyecto.objects.create(nombre="Implementación de ERP", tipo_proyecto=tp2, horas_demandadas=60, rol_requerido="Ingeniero de Proyectos", semana_inicio=1, duracion_semanas=52)
+        Proyecto.objects.create(nombre="Implementación de ERP", tipo_proyecto=tp2, horas_demandadas=10, rol_requerido="Jefe de Proyecto", semana_inicio=1, duracion_semanas=52)
+        
+        Proyecto.objects.create(nombre="Expansión Internacional", tipo_proyecto=tp1, horas_demandadas=100, rol_requerido="Ingeniero de Proyectos", semana_inicio=1, duracion_semanas=16)
+        Proyecto.objects.create(nombre="Expansión Internacional", tipo_proyecto=tp1, horas_demandadas=30, rol_requerido="Jefe de Proyecto", semana_inicio=1, duracion_semanas=16)
 
         self.stdout.write(self.style.SUCCESS('Datos de prueba cargados exitosamente.'))
