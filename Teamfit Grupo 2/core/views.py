@@ -1,4 +1,5 @@
 from django.shortcuts import redirect, render
+from .models import proyectos
 from .forms import UploadFileForm
 from datetime import datetime, timedelta, time
 import random
@@ -7,7 +8,7 @@ import json
 import csv
 from django.contrib import messages
 import pandas as pd
-from .models import Proyecto, Recurso, Disponibilidad, Asignacion, AsignacionControl
+from .models import proyectos,empleado,asignacion
 # import plotly.express as px
 # import plotly.graph_objects as go
 # from django.contrib.auth import authenticate, login, logout
@@ -19,10 +20,6 @@ from django.db import transaction
 from django.db.models import F
 from datetime import datetime,date
 from decimal import Decimal
-from django.core.paginator import Paginator
-from django.http import JsonResponse
-from django.http import HttpResponse
-from django.db import IntegrityError
 
 
 # Create your views here.
@@ -257,242 +254,124 @@ def calcular_horas_requeridas(proyecto):
     dias = (fecha_cierre - fecha_inicio).days
     return dias * 8  # Asumiendo 8 horas por día de trabajo
 
-
-from django.core.exceptions import ObjectDoesNotExist
-
-from .models import Proyecto, Recurso, Disponibilidad, Asignacion
-
-from .models import Proyecto, Recurso, Disponibilidad, Asignacion
-
-def asignar_recursos():
-    """
-    Algoritmo que asigna recursos semana a semana.
-    Ordena los proyectos y recursos según sus prioridades y distribuye las horas.
-    """
-    
-    # Iteramos sobre las semanas, de la 1 a la 52
-    for semana in range(1, 53):
-        # Filtrar proyectos activos para esta semana y ordenar por prioridad del TipoProyecto
-        proyectos = Proyecto.objects.filter(semana_inicio__lte=semana).order_by('-tipo_proyecto__prioridad', 'nombre')
-
-        for proyecto in proyectos:
-            if semana > proyecto.semana_inicio + proyecto.duracion_semanas - 1:
-                continue  # Saltar si la semana actual está fuera del rango del proyecto
-
-            # Verificar si el rol requerido está disponible
-            recursos_disponibles = Recurso.objects.filter(rol=proyecto.rol_requerido).order_by('-prioridad', 'nombre')
-            if not recursos_disponibles.exists():
-                print(f"No hay recursos disponibles para el rol requerido '{proyecto.rol_requerido}' del proyecto '{proyecto.nombre}'")
-                continue
-
-            horas_demandadas = proyecto.horas_demandadas
-
-            for recurso in recursos_disponibles:
-                # Obtener la disponibilidad del recurso para la semana actual
-                disponibilidades = Disponibilidad.objects.filter(recurso=recurso, semana=semana)
-
-                if not disponibilidades.exists():
-                    print(f"No hay disponibilidad registrada para el recurso '{recurso.nombre}' en la semana {semana}")
-                    continue
-
-                for disponibilidad in disponibilidades:
-                    if disponibilidad.horas_disponibles >= horas_demandadas:
-                        # Asignar las horas demandadas
-                        Asignacion.objects.create(
-                            proyecto=proyecto,
-                            recurso=recurso,
-                            semana=semana,
-                            horas_asignadas=horas_demandadas
-                        )
-                        disponibilidad.horas_disponibles -= horas_demandadas
-                        disponibilidad.save()
-                        horas_demandadas = 0
-                        break
-                    else:
-                        # Asignar las horas disponibles y continuar a la siguiente semana
-                        Asignacion.objects.create(
-                            proyecto=proyecto,
-                            recurso=recurso,
-                            semana=semana,
-                            horas_asignadas=disponibilidad.horas_disponibles
-                        )
-                        horas_demandadas -= disponibilidad.horas_disponibles
-                        disponibilidad.horas_disponibles = 0
-                        disponibilidad.save()
-
-            if horas_demandadas > 0:
-                # Si no se pudieron asignar todas las horas, mover la demanda a la siguiente semana
-                proyecto.horas_demandadas = horas_demandadas
-                proyecto.save()
-
-        # Al final de la semana 52, manejar las horas remanentes si las hay
-        if semana == 52:
-            for proyecto in proyectos:
-                if proyecto.horas_demandadas > 0:
-                    print(f'Proyecto {proyecto.nombre} tiene {proyecto.horas_demandadas} horas pendientes después de la semana 52.')
-
-
-def asignaciones_list(request):
-    """
-    Vista que muestra la lista de asignaciones en una tabla paginada.
-    """
-
-    # Obtener todas las asignaciones
-    asignaciones = Asignacion.objects.all().order_by('semana')
-
-    # Configurar el paginador para mostrar 10 asignaciones por página
-    paginator = Paginator(asignaciones, 10)
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-
-    # Calcular el rango de páginas para mostrar en la interfaz
-    num_pages = paginator.num_pages
-    current_page = page_obj.number
-    start_page = max(current_page - 5, 1)
-    end_page = min(current_page + 5, num_pages)
-
-    # Crear una lista de páginas visibles
-    page_range = list(range(start_page, end_page + 1))
-
-    # Renderizar el template con las asignaciones paginadas
-    return render(request, 'core/asignaciones_list.html', {
-        'asignaciones': page_obj,
-        'num_pages': num_pages,
-        'current_page': current_page,
-        'page_range': page_range,
-    })
-
-
-def asignaciones_data(request):
-    asignaciones = Asignacion.objects.all().select_related('proyecto', 'recurso').values(
-        'proyecto__nombre', 'recurso__nombre', 'semana', 'horas_asignadas'
-    )
-    paginator = Paginator(asignaciones, request.GET.get('length', 10))
-    page_number = request.GET.get('start', 1)
-    page_obj = paginator.get_page(int(page_number) // paginator.per_page + 1)
-    data = {
-        'draw': int(request.GET.get('draw', 1)),
-        'recordsTotal': paginator.count,
-        'recordsFiltered': paginator.count,
-        'data': list(page_obj)
-    }
-    return JsonResponse(data)
-
-# Proyectos
-def proyectos_data(request):
-    proyectos = Proyecto.objects.all().values(
-        'nombre', 'duracion_semanas', 'horas_demandadas', 'tipo_proyecto__prioridad'
-    )
-    paginator = Paginator(proyectos, request.GET.get('length', 10))
-    page_number = request.GET.get('start', 1)
-    page_obj = paginator.get_page(int(page_number) // paginator.per_page + 1)
-    data = {
-        'draw': int(request.GET.get('draw', 1)),
-        'recordsTotal': paginator.count,
-        'recordsFiltered': paginator.count,
-        'data': list(page_obj)
-    }
-    return JsonResponse(data)
-
-# Recursos
-def recursos_asignados_data(request):
-    # Realizamos una agregación de las horas asignadas por proyecto y semana
-    asignaciones = Asignacion.objects.values(
-        'proyecto__nombre',  # Nombre del proyecto
-        'semana'  # Número de la semana
-    ).annotate(
-        total_horas_semanales=Sum('horas_asignadas')  # Suma de las horas asignadas por semana
-    )
-
-    # Implementamos paginación de resultados
-    paginator = Paginator(asignaciones, request.GET.get('length', 10))
-    page_number = request.GET.get('start', 1)
-    page_obj = paginator.get_page(int(page_number) // paginator.per_page + 1)
-
-    # Estructura de datos para enviar a DataTables
-    data = {
-        'draw': int(request.GET.get('draw', 1)),
-        'recordsTotal': paginator.count,
-        'recordsFiltered': paginator.count,
-        'data': list(page_obj)
-    }
-    
-    return JsonResponse(data)
-
-def ejecutar_asignacion(request):
+def asignar_recursos(request):
     if request.method == 'POST':
-        control, created = AsignacionControl.objects.get_or_create(id=1)  # Usa un único registro para controlar
+        # Limpiar asignaciones previas
+        asignacion.objects.all().delete()
+
+        # Filtrar proyectos que necesitan asignación
+        proyectos_necesitan_asignacion = proyectos.objects.filter(
+            ocupacionInicio__lt=80.00,  # Ocupación menor al 80%
+            disponibilidad__gt=0        # Debe tener disponibilidad
+        )
+
+        # Asignar recursos a proyectos
+        for proyecto in proyectos_necesitan_asignacion:
+            horas_requeridas = calcular_horas_requeridas(proyecto)
+            empleados_disponibles = empleado.objects.filter(estado='Disponible')
+
+            # Asegurar que ambas fechas son del mismo tipo (date)
+            fecha_inicio = proyecto.createDate.date() if isinstance(proyecto.createDate, datetime) else proyecto.createDate
+            fecha_termino = proyecto.cierre if isinstance(proyecto.cierre, date) else proyecto.cierre.date()
+
+            # Calcular la duración del proyecto en días
+            duracion_proyecto = (fecha_termino - fecha_inicio).days
+
+            # Verificar cuántos empleados son necesarios para cubrir las horas requeridas
+            empleados_asignados = []
+            for emp in empleados_disponibles:
+                if horas_requeridas <= 0:
+                    break
+                
+                horas_disponibles = Decimal(emp.disponibilidad)
+                horas_diarias = horas_disponibles / duracion_proyecto
+
+                if horas_diarias >= horas_requeridas:
+                    horas_a_asignar = horas_requeridas / duracion_proyecto
+                else:
+                    horas_a_asignar = horas_diarias
+
+                horas_asignadas = horas_a_asignar * duracion_proyecto
+                nueva_disponibilidad = horas_disponibles - horas_asignadas
+                ocupacion = Decimal(100) * (horas_disponibles - nueva_disponibilidad) / horas_disponibles
+                utilizacion = Decimal(100) * horas_asignadas / horas_disponibles
+
+                empleados_asignados.append(emp)
+
+                # Crear la asignación
+                with transaction.atomic():
+                    asignacion.objects.create(
+                        empleado=emp,
+                        proyecto=proyecto,
+                        horas_asignadas=horas_asignadas,
+                        categoria=emp.categoria,
+                        estado_empleado='Disponible',
+                        disponibilidad_restante=nueva_disponibilidad,
+                        ocupacion=ocupacion,
+                        disponibilidad=nueva_disponibilidad,
+                        utilizacion=utilizacion
+                    )
+
+                horas_requeridas -= horas_asignadas
+
+            # Asegurar que al menos 4 empleados sean asignados
+            if len(empleados_asignados) < 4:
+                print(f"El proyecto {proyecto.proyecto} no tiene suficientes empleados asignados. Asignando más.")
+                for _ in range(4 - len(empleados_asignados)):
+                    if horas_requeridas <= 0:
+                        break
+                    # Asignar empleados adicionales aquí si es necesario
+
+            if horas_requeridas > 0:
+                print(f"El proyecto {proyecto.proyecto} no pudo ser completamente asignado.")
+
+        mensaje = "Recursos asignados exitosamente."
+
+    else:
         mensaje = ""
 
-        if not created:
-            # Si ya existe un registro, verifica si se realizó una ejecución hoy
-            if control.fecha_ultimo_ejecucion == datetime.today():
-                return HttpResponse("La asignación ya ha sido ejecutada hoy.", status=400)
+    # Filtrar proyectos que necesitan asignación para mostrar
+    proyectos_necesitan_asignacion = proyectos.objects.filter(
+        ocupacionInicio__lt=80.00,  # Ocupación menor al 80%
+        disponibilidad__gt=0        # Debe tener disponibilidad
+    )
 
-        try:
-            # Ejecutar la asignación de recursos
-            asignar_recursos()
+    # Contexto para renderizar
+    context = {
+        'proyectos': proyectos_necesitan_asignacion,
+        'asignaciones': asignacion.objects.all(),
+        'mensaje': mensaje
+    }
 
-            # Actualizar el registro de control
-            control.ejecuciones_exitosas += 1
-            control.save()
-            mensaje = "Asignación de recursos ejecutada con éxito."
+    return render(request, 'core/proyectos_a_asignar.html', context)
 
-        except IntegrityError as e:
-            # Manejar errores de integridad, como claves duplicadas
-            control.ejecuciones_fallidas += 1
-            control.save()
-            mensaje = f"Error al ejecutar la asignación: {str(e)}"
-            return HttpResponse(mensaje, status=500)
+def proyectos_a_asignar(request):
+    # Filtrar proyectos que necesitan asignación para mostrar
+    proyectos_necesitan_asignacion = proyectos.objects.filter(
+        ocupacionInicio__lt=80.00,  # Ocupación menor al 80%
+        disponibilidad__gt=0        # Debe tener disponibilidad
+    )
 
-        # Asegúrate de devolver una respuesta con el mensaje adecuado
-        return HttpResponse(mensaje, status=200)
-    
-    return HttpResponse(status=405)  # Método no permitido
+    # Contexto para renderizar
+    context = {
+        'proyectos': proyectos_necesitan_asignacion,
+        'asignaciones': asignacion.objects.all()
+    }
 
-def eliminar_asignaciones(request):
-    """
-    Vista para eliminar todas las asignaciones actuales.
-    """
+    return render(request, 'core/proyectos_a_asignar.html', context)
+
+def limpiar_asignaciones(request):
+    # Limpiar asignaciones previas
+    asignacion.objects.all().delete()
+    return redirect('proyectos_a_asignar')
+
+def limpiar_proyectos(request):
     if request.method == 'POST':
-        # Eliminar todas las asignaciones
-        Asignacion.objects.all().delete()
-
-        # Redirigir o devolver una respuesta de éxito
-        return redirect('asignaciones_list')  # Redirige a la página de asignaciones
-
-    return HttpResponse(status=405)  # Devuelve un error si no es un POST
-
-
-
-
-# def proyectos_a_asignar(request):
-#     # Filtrar proyectos que necesitan asignación para mostrar
-#     proyectos_necesitan_asignacion = proyectos.objects.filter(
-#         ocupacionInicio__lt=80.00,  # Ocupación menor al 80%
-#         disponibilidad__gt=0        # Debe tener disponibilidad
-#     )
-
-#     # Contexto para renderizar
-#     context = {
-#         'proyectos': proyectos_necesitan_asignacion,
-#         'asignaciones': asignacion.objects.all()
-#     }
-
-#     return render(request, 'core/proyectos_a_asignar.html', context)
-
-# def limpiar_asignaciones(request):
-#     # Limpiar asignaciones previas
-#     asignacion.objects.all().delete()
-#     return redirect('proyectos_a_asignar')
-
-# def limpiar_proyectos(request):
-#     if request.method == 'POST':
-#         proyectos.objects.all().delete()
-#         messages.success(request, "Todos los proyectos han sido eliminados exitosamente.")
-#         return redirect('asignar_recursos')
+        proyectos.objects.all().delete()
+        messages.success(request, "Todos los proyectos han sido eliminados exitosamente.")
+        return redirect('asignar_recursos')
     
-# def pruebas(request):
-#     # Puedes incluir lógica aquí si es necesario
-#     # Por ahora, esta vista simplemente renderiza la plantilla con el contexto recibido
-#     return render(request, 'core/pruebas.html')
+def pruebas(request):
+    # Puedes incluir lógica aquí si es necesario
+    # Por ahora, esta vista simplemente renderiza la plantilla con el contexto recibido
+    return render(request, 'core/pruebas.html')
