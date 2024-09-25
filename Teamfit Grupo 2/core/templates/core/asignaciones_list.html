@@ -230,7 +230,6 @@ Teamfit - Proyectos a Asignar Recursos
                 "order": [[2, 'asc']]
             });
 
-            // Manejo del formulario de asignación de recursos con AJAX
             $('#asignacionForm').on('submit', function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -238,7 +237,11 @@ Teamfit - Proyectos a Asignar Recursos
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
-                        $('#mensaje').removeClass('alert-danger').addClass('alert-success').text(response).show();
+                        if (response.includes("Asignación de recursos realizada con éxito")) {
+                            $('#mensaje').removeClass('alert-warning').addClass('alert-success').text(response).show();
+                        } else {
+                            $('#mensaje').removeClass('alert-success').addClass('alert-warning').text(response).show();
+                        }
                         // Recarga de las tablas
                         totalesTable.ajax.reload();
                         proyectosTable.ajax.reload();
@@ -250,7 +253,6 @@ Teamfit - Proyectos a Asignar Recursos
                 });
             });
 
-            // Manejo del formulario de eliminación de asignaciones con AJAX
             $('#eliminarAsignacionesForm').on('submit', function(e) {
                 e.preventDefault();
                 $.ajax({

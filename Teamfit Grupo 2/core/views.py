@@ -24,6 +24,8 @@ from django.http import JsonResponse
 from django.http import HttpResponse
 from django.db import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+import logging
+from django.db import DatabaseError, IntegrityError, OperationalError
 
 
 # Create your views here.
@@ -265,6 +267,7 @@ def asignar_recursos():
     """
     mensaje = ""
     asignacion_realizada = False
+    asignacion_previa_detectada = False
 
     # Iteramos sobre las semanas, de la 1 a la 52
     for semana in range(1, 53):
@@ -294,7 +297,8 @@ def asignar_recursos():
 
                     if asignacion_existente:
                         print(f"Asignación ya existente para el proyecto '{proyecto.nombre}' con el recurso '{recurso.nombre}' en la semana {semana}.")
-                        return "No se puede realizar la asignación, ya existe una asignación previa."
+                        asignacion_previa_detectada = True
+                        continue  # Continuar sin hacer una nueva asignación
 
                     if disponibilidad.horas_disponibles >= horas_demandadas:
                         # Asignar las horas demandadas
@@ -330,10 +334,14 @@ def asignar_recursos():
                 if proyecto.horas_demandadas > 0:
                     print(f'Proyecto {proyecto.nombre} tiene {proyecto.horas_demandadas} horas pendientes después de la semana 52.')
 
-    if asignacion_realizada:
+    # Mensaje final basado en lo que ocurrió
+    if asignacion_realizada and not asignacion_previa_detectada:
         return "Asignación de recursos realizada con éxito."
+    elif asignacion_previa_detectada:
+        return "Asignaciones ya existen para algunos o todos los recursos en estas semanas."
     else:
         return "No se pudo realizar la asignación."
+
 
 
 def asignaciones_list(request):
@@ -444,35 +452,67 @@ def recursos_asignados_data(request):
 
     return JsonResponse(data)
 
+# Configuración de logging
+logger = logging.getLogger(__name__)
+
 def ejecutar_asignacion(request):
     if request.method == 'POST':
-        control, created = AsignacionControl.objects.get_or_create(id=1)  # Usa un único registro para controlar
-        mensaje = ""
-
-        if not created:
-            # Si ya existe un registro, verifica si se realizó una ejecución hoy
-            if control.fecha_ultimo_ejecucion == datetime.today():
-                return HttpResponse("La asignación ya ha sido ejecutada hoy.", status=400)
-
         try:
-            # Ejecutar la asignación de recursos
-            asignar_recursos()
+            control, created = AsignacionControl.objects.get_or_create(id=1)  # Usa un único registro para controlar
+            mensaje = ""
 
-            # Actualizar el registro de control
-            control.ejecuciones_exitosas += 1
-            control.save()
-            mensaje = "Asignación de recursos ejecutada con éxito."
+            if not created:
+                # Si ya existe un registro, verifica si se realizó una ejecución hoy
+                if control.fecha_ultimo_ejecucion == datetime.today():
+                    logger.warning("Intento de ejecutar la asignación más de una vez en el mismo día.")
+                    return HttpResponse("La asignación ya ha sido ejecutada hoy.", status=400)
+
+            # Ejecutar la asignación de recursos y capturar el mensaje de retorno
+            mensaje_asignacion = asignar_recursos()
+
+            # Si la asignación fue exitosa o parcial, actualiza el registro de control
+            if "éxito" in mensaje_asignacion or "ya existen" in mensaje_asignacion:
+                control.ejecuciones_exitosas += 1
+                control.fecha_ultimo_ejecucion = datetime.today()
+                control.save()
+
+            mensaje = mensaje_asignacion
 
         except IntegrityError as e:
-            # Manejar errores de integridad, como claves duplicadas
+            # Manejar errores de integridad (claves duplicadas, etc.)
             control.ejecuciones_fallidas += 1
             control.save()
-            mensaje = f"Error al ejecutar la asignación: {str(e)}"
+            logger.error(f"Error de integridad en la asignación: {e}")
+            mensaje = f"Error de integridad: {str(e)}"
+            return HttpResponse(mensaje, status=500)
+
+        except OperationalError as e:
+            # Manejar errores operacionales, como problemas de conexión a la base de datos
+            control.ejecuciones_fallidas += 1
+            control.save()
+            logger.critical(f"Error operacional durante la asignación: {e}")
+            mensaje = f"Error operacional: {str(e)}"
+            return HttpResponse(mensaje, status=500)
+
+        except DatabaseError as e:
+            # Manejar cualquier otro error relacionado con la base de datos
+            control.ejecuciones_fallidas += 1
+            control.save()
+            logger.error(f"Error de base de datos: {e}")
+            mensaje = f"Error de base de datos: {str(e)}"
+            return HttpResponse(mensaje, status=500)
+
+        except Exception as e:
+            # Manejar cualquier otra excepción inesperada
+            control.ejecuciones_fallidas += 1
+            control.save()
+            logger.exception(f"Error inesperado en la asignación: {e}")
+            mensaje = f"Error inesperado: {str(e)}"
             return HttpResponse(mensaje, status=500)
 
         # Asegúrate de devolver una respuesta con el mensaje adecuado
         return HttpResponse(mensaje, status=200)
-    
+
     return HttpResponse(status=405)  # Método no permitido
 
 def eliminar_asignaciones(request):
