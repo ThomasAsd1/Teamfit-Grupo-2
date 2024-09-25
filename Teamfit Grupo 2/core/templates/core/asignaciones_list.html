@@ -13,41 +13,108 @@ Teamfit - Proyectos a Asignar Recursos
     <!-- CSS de DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <!-- Tipografía Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Roboto', sans-serif;
+        }
+        .container {
+            margin-top: 100px;
+            max-width: 950px;
+            background-color: #fff;
+            padding: 30px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+        }
+        h1 {
+            margin-top: 50px;
+            text-align: center;
+            color: #052b53;
+            font-weight: 700;
+            font-size: 2.5rem;
+        }
+        
+            h2 {
+        margin-top: 40px;
+        text-align: center; /* Centrar el título */
+        color: #052b53;
+        font-weight: 500;
+        font-size: 1.75rem;
+        
+        }
         .table-container {
-            margin-top: 20px;
+            margin-top: 30px;
         }
         .table-title {
-            margin-top: 20px;
+            margin-bottom: 15px;
+        text-align: center; /* Centrar el título */
+            
+            font-size: 1.5rem;
+            color: #052b53;
         }
         table.dataTable thead {
-            background-color: #f8f9fa;
+            background-color: #f8f9fabf;
+            color: #495057;
+        }
+        table {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+        tr {
+            background: #052b53;
+            color: #031f3d;
+        
+        }
+        th{
+            color: #f4f6f9;
+        }
+        .btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #052b53;
+            border-color: #052b53;
+        }
+        .btn-primary:hover {
+            background-color: #031f3d;
+            border-color: #031f3d;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #bd2130;
+            border-color: #bd2130;
+        }
+        .alert {
+            text-align: center;
+            font-size: 18px;
+            margin-top: 30px;
+            padding: 15px;
+        }
+        /* Estilo para los botones alineados */
+        .button-container {
+            display: flex;
+            
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+            margin-bottom: 50px;
         }
     </style>
 </head>
 <body>
+
     <div class="container">
         <h1>Asignaciones de Recursos</h1>
-    
-        <!-- Contenedor para mensajes -->
-        <div id="mensaje" class="alert" style="display: none;"></div>
-    
-        <!-- Botón para ejecutar la asignación -->
-        <div class="table-container">
-            <form id="asignacionForm" method="post" action="{% url 'ejecutar_asignacion' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">Ejecutar Asignación de Recursos</button>
-            </form>
-        </div>
-    
-        <!-- Botón para eliminar asignaciones -->
-        <div class="table-container">
-            <form id="eliminarAsignacionesForm" method="post" action="{% url 'eliminar_asignaciones' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Eliminar Asignaciones Actuales</button>
-            </form>
-        </div>
-    
+
         <!-- Reporte de horas asignadas por semana -->
         <div class="table-container">
             <h2 class="table-title">Horas Asignadas por Semana</h2>
@@ -61,7 +128,7 @@ Teamfit - Proyectos a Asignar Recursos
                 </thead>
             </table>
         </div>
-    
+
         <!-- Reporte de proyectos -->
         <div class="table-container">
             <h2 class="table-title">Detalle de Proyectos</h2>
@@ -76,7 +143,6 @@ Teamfit - Proyectos a Asignar Recursos
                 </thead>
             </table>
         </div>
-    </div>
 
         <!-- Reporte de recursos -->
         <div class="table-container">
@@ -93,6 +159,23 @@ Teamfit - Proyectos a Asignar Recursos
             </table>
         </div>
 
+        <!-- Contenedor para botones -->
+        <div class="button-container">
+            <!-- Botón para ejecutar la asignación -->
+            <form id="asignacionForm" method="post" action="{% url 'ejecutar_asignacion' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn " style="background-color: #052b53; color: #f4f6f9">Ejecutar Asignación de Recursos</button>
+            </form>
+
+            <!-- Botón para eliminar asignaciones -->
+            <form id="eliminarAsignacionesForm" method="post" action="{% url 'eliminar_asignaciones' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Eliminar Asignaciones Actuales</button>
+            </form>
+        </div>
+
+        <!-- Contenedor para mensajes -->
+        <div id="mensaje" class="alert" style="display: none;"></div>
     </div>
 
     <!-- jQuery y DataTables JS -->
@@ -103,7 +186,6 @@ Teamfit - Proyectos a Asignar Recursos
     <!-- Inicialización de DataTables con AJAX -->
     <script>
         $(document).ready(function() {
-            // Inicialización de DataTables
             $('#totalesTable').DataTable({
                 "processing": true,
                 "serverSide": true,
@@ -117,7 +199,7 @@ Teamfit - Proyectos a Asignar Recursos
                     { "data": "semana" }
                 ]
             });
-        
+
             $('#proyectosTable').DataTable({
                 "processing": true,
                 "serverSide": true,
@@ -132,8 +214,7 @@ Teamfit - Proyectos a Asignar Recursos
                     { "data": "tipo_proyecto__prioridad" }
                 ]
             });
-            
-        // Tabla de asignaciones
+
             $('#asignacionesTable').DataTable({
                 "processing": true,
                 "serverSide": true,
@@ -148,52 +229,47 @@ Teamfit - Proyectos a Asignar Recursos
                     { "data": "horas_asignadas" }
                 ]
             });
+
             // Manejo del formulario de asignación de recursos con AJAX
             $('#asignacionForm').on('submit', function(e) {
-                e.preventDefault();  
-        
+                e.preventDefault();
+
                 $.ajax({
                     url: $(this).attr('action'),
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
-                        // Mostrar mensaje de éxito
                         $('#mensaje').removeClass('alert-danger').addClass('alert-success').text(response).show();
-                        // Actualizar las tablas después de la asignación
                         $('#totalesTable').DataTable().ajax.reload();
                         $('#proyectosTable').DataTable().ajax.reload();
                     },
                     error: function(xhr) {
-                        // Mostrar mensaje de error
                         $('#mensaje').removeClass('alert-success').addClass('alert-danger').text(xhr.responseText).show();
                     }
                 });
             });
-        
+
             // Manejo del formulario de eliminación de asignaciones con AJAX
             $('#eliminarAsignacionesForm').on('submit', function(e) {
-                e.preventDefault();  // Evitar que el formulario se envíe de manera tradicional
-        
+                e.preventDefault();
+
                 $.ajax({
                     url: $(this).attr('action'),
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
-                        // Mostrar mensaje de éxito
                         $('#mensaje').removeClass('alert-danger').addClass('alert-success').text('Asignaciones eliminadas con éxito.').show();
-                        // Actualizar las tablas después de la eliminación
                         $('#totalesTable').DataTable().ajax.reload();
                         $('#proyectosTable').DataTable().ajax.reload();
                         $('#asignacionesTable').DataTable().ajax.reload();
                     },
                     error: function(xhr) {
-                        // Mostrar mensaje de error
                         $('#mensaje').removeClass('alert-success').addClass('alert-danger').text(xhr.responseText).show();
                     }
                 });
             });
         });
-        </script>
+    </script>
 </body>
 </html>
 {% endblock content %}

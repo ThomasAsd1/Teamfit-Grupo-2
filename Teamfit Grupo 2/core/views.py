@@ -70,7 +70,7 @@ def subirProyectos(request, upload='Sh'):
             #   return render(request, "core/subirProyectos.html", data)
             
             # Guardar el proyecto si pasa las validaciones
-            proyecto = proyectos(
+            proyecto = proyecto(
                 id=row.get('id'),
                 proyecto=row.get('proyecto'),
                 lineaNegocio=row.get('lineaNegocio'),
