@@ -23,6 +23,7 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.http import HttpResponse
 from django.db import IntegrityError
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # Create your views here.
@@ -257,22 +258,16 @@ def calcular_horas_requeridas(proyecto):
     dias = (fecha_cierre - fecha_inicio).days
     return dias * 8  # Asumiendo 8 horas por día de trabajo
 
-
-from django.core.exceptions import ObjectDoesNotExist
-
-from .models import Proyecto, Recurso, Disponibilidad, Asignacion
-
-from .models import Proyecto, Recurso, Disponibilidad, Asignacion
-
 def asignar_recursos():
     """
     Algoritmo que asigna recursos semana a semana.
     Ordena los proyectos y recursos según sus prioridades y distribuye las horas.
     """
-    
+    mensaje = ""
+    asignacion_realizada = False
+
     # Iteramos sobre las semanas, de la 1 a la 52
     for semana in range(1, 53):
-        # Filtrar proyectos activos para esta semana y ordenar por prioridad del TipoProyecto
         proyectos = Proyecto.objects.filter(semana_inicio__lte=semana).order_by('-tipo_proyecto__prioridad', 'nombre')
 
         for proyecto in proyectos:
@@ -282,20 +277,25 @@ def asignar_recursos():
             # Verificar si el rol requerido está disponible
             recursos_disponibles = Recurso.objects.filter(rol=proyecto.rol_requerido).order_by('-prioridad', 'nombre')
             if not recursos_disponibles.exists():
-                print(f"No hay recursos disponibles para el rol requerido '{proyecto.rol_requerido}' del proyecto '{proyecto.nombre}'")
+                print(f"No hay recursos disponibles para el rol requerido '{proyecto.rol_requerido}' del proyecto '{proyecto.nombre}'.")
                 continue
 
             horas_demandadas = proyecto.horas_demandadas
 
             for recurso in recursos_disponibles:
-                # Obtener la disponibilidad del recurso para la semana actual
                 disponibilidades = Disponibilidad.objects.filter(recurso=recurso, semana=semana)
 
                 if not disponibilidades.exists():
-                    print(f"No hay disponibilidad registrada para el recurso '{recurso.nombre}' en la semana {semana}")
+                    print(f"No hay disponibilidad registrada para el recurso '{recurso.nombre}' en la semana {semana}.")
                     continue
 
                 for disponibilidad in disponibilidades:
+                    asignacion_existente = Asignacion.objects.filter(proyecto=proyecto, recurso=recurso, semana=semana).first()
+
+                    if asignacion_existente:
+                        print(f"Asignación ya existente para el proyecto '{proyecto.nombre}' con el recurso '{recurso.nombre}' en la semana {semana}.")
+                        return "No se puede realizar la asignación, ya existe una asignación previa."
+
                     if disponibilidad.horas_disponibles >= horas_demandadas:
                         # Asignar las horas demandadas
                         Asignacion.objects.create(
@@ -307,9 +307,10 @@ def asignar_recursos():
                         disponibilidad.horas_disponibles -= horas_demandadas
                         disponibilidad.save()
                         horas_demandadas = 0
+                        asignacion_realizada = True
                         break
                     else:
-                        # Asignar las horas disponibles y continuar a la siguiente semana
+                        # Asignar las horas disponibles y continuar con la siguiente disponibilidad
                         Asignacion.objects.create(
                             proyecto=proyecto,
                             recurso=recurso,
@@ -321,15 +322,18 @@ def asignar_recursos():
                         disponibilidad.save()
 
             if horas_demandadas > 0:
-                # Si no se pudieron asignar todas las horas, mover la demanda a la siguiente semana
                 proyecto.horas_demandadas = horas_demandadas
                 proyecto.save()
 
-        # Al final de la semana 52, manejar las horas remanentes si las hay
         if semana == 52:
             for proyecto in proyectos:
                 if proyecto.horas_demandadas > 0:
                     print(f'Proyecto {proyecto.nombre} tiene {proyecto.horas_demandadas} horas pendientes después de la semana 52.')
+
+    if asignacion_realizada:
+        return "Asignación de recursos realizada con éxito."
+    else:
+        return "No se pudo realizar la asignación."
 
 
 def asignaciones_list(request):
@@ -364,24 +368,45 @@ def asignaciones_list(request):
 
 
 def asignaciones_data(request):
+    # Definir el orden por defecto
+    order_column = request.GET.get('order[0][column]', 0)  # Obtiene el índice de la columna a ordenar
+    order_dir = request.GET.get('order[0][dir]', 'asc')  # Obtiene el orden (ascendente o descendente)
+    
+    # Mapear el índice de la columna a los nombres de los campos del modelo
+    columns = [
+        'proyecto__nombre',
+        'recurso__nombre',
+        'semana',
+        'horas_asignadas'
+    ]
+    
+    # Obtener el campo por el que ordenar
+    order_field = columns[int(order_column)]
+    
+    # Realizar la consulta con ordenación
     asignaciones = Asignacion.objects.all().select_related('proyecto', 'recurso').values(
         'proyecto__nombre', 'recurso__nombre', 'semana', 'horas_asignadas'
-    )
+    ).order_by(f'{order_field if order_dir == "asc" else "-" + order_field}')
+
+    # Configurar la paginación
     paginator = Paginator(asignaciones, request.GET.get('length', 10))
-    page_number = request.GET.get('start', 1)
-    page_obj = paginator.get_page(int(page_number) // paginator.per_page + 1)
+    page_number = int(request.GET.get('start', 0)) // paginator.per_page + 1
+    page_obj = paginator.get_page(page_number)
+
+    # Preparar la respuesta JSON
     data = {
         'draw': int(request.GET.get('draw', 1)),
         'recordsTotal': paginator.count,
         'recordsFiltered': paginator.count,
         'data': list(page_obj)
     }
+
     return JsonResponse(data)
 
 # Proyectos
 def proyectos_data(request):
     proyectos = Proyecto.objects.all().values(
-        'nombre', 'duracion_semanas', 'horas_demandadas', 'tipo_proyecto__prioridad'
+        'nombre', 'duracion_semanas', 'horas_demandadas', 'tipo_proyecto__prioridad', 'rol_requerido'
     )
     paginator = Paginator(proyectos, request.GET.get('length', 10))
     page_number = request.GET.get('start', 1)
@@ -399,15 +424,15 @@ def recursos_asignados_data(request):
     # Realizamos una agregación de las horas asignadas por proyecto y semana
     asignaciones = Asignacion.objects.values(
         'proyecto__nombre',  # Nombre del proyecto
-        'semana'  # Número de la semana
+        'semana',  # Número de la semana
     ).annotate(
         total_horas_semanales=Sum('horas_asignadas')  # Suma de las horas asignadas por semana
     )
 
     # Implementamos paginación de resultados
     paginator = Paginator(asignaciones, request.GET.get('length', 10))
-    page_number = request.GET.get('start', 1)
-    page_obj = paginator.get_page(int(page_number) // paginator.per_page + 1)
+    page_number = int(request.GET.get('start', 0)) // paginator.per_page + 1
+    page_obj = paginator.get_page(page_number)
 
     # Estructura de datos para enviar a DataTables
     data = {
@@ -416,7 +441,7 @@ def recursos_asignados_data(request):
         'recordsFiltered': paginator.count,
         'data': list(page_obj)
     }
-    
+
     return JsonResponse(data)
 
 def ejecutar_asignacion(request):

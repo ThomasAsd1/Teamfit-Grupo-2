@@ -35,22 +35,19 @@ Teamfit - Proyectos a Asignar Recursos
             font-weight: 700;
             font-size: 2.5rem;
         }
-        
-            h2 {
-        margin-top: 40px;
-        text-align: center; /* Centrar el título */
-        color: #052b53;
-        font-weight: 500;
-        font-size: 1.75rem;
-        
+        h2 {
+            margin-top: 40px;
+            text-align: center; /* Centrar el título */
+            color: #052b53;
+            font-weight: 500;
+            font-size: 1.75rem;
         }
         .table-container {
             margin-top: 30px;
         }
         .table-title {
             margin-bottom: 15px;
-        text-align: center; /* Centrar el título */
-            
+            text-align: center; /* Centrar el título */
             font-size: 1.5rem;
             color: #052b53;
         }
@@ -67,7 +64,6 @@ Teamfit - Proyectos a Asignar Recursos
         tr {
             background: #052b53;
             color: #031f3d;
-        
         }
         th{
             color: #f4f6f9;
@@ -102,7 +98,6 @@ Teamfit - Proyectos a Asignar Recursos
         /* Estilo para los botones alineados */
         .button-container {
             display: flex;
-            
             justify-content: center;
             gap: 30px;
             margin-top: 40px;
@@ -114,21 +109,6 @@ Teamfit - Proyectos a Asignar Recursos
 
     <div class="container">
         <h1>Asignaciones de Recursos</h1>
-
-        <!-- Reporte de horas asignadas por semana -->
-        <div class="table-container">
-            <h2 class="table-title">Horas Asignadas por Semana</h2>
-            <table id="totalesTable" class="display" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Proyecto</th>
-                        <th>Total Horas Semanales</th>
-                        <th>Semana</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-
         <!-- Reporte de proyectos -->
         <div class="table-container">
             <h2 class="table-title">Detalle de Proyectos</h2>
@@ -139,6 +119,21 @@ Teamfit - Proyectos a Asignar Recursos
                         <th>Duración (semanas)</th>
                         <th>Horas Totales</th>
                         <th>Prioridad</th>
+                        <th>Rol Requerido</th> 
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        
+        <!-- Reporte de horas asignadas por semana -->
+        <div class="table-container">
+            <h2 class="table-title">Horas Asignadas por Semana</h2>
+            <table id="totalesTable" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>Total Horas Semanales</th>
+                        <th>Semana</th>
                     </tr>
                 </thead>
             </table>
@@ -164,7 +159,7 @@ Teamfit - Proyectos a Asignar Recursos
             <!-- Botón para ejecutar la asignación -->
             <form id="asignacionForm" method="post" action="{% url 'ejecutar_asignacion' %}">
                 {% csrf_token %}
-                <button type="submit" class="btn " style="background-color: #052b53; color: #f4f6f9">Ejecutar Asignación de Recursos</button>
+                <button type="submit" class="btn" style="background-color: #052b53; color: #f4f6f9">Ejecutar Asignación de Recursos</button>
             </form>
 
             <!-- Botón para eliminar asignaciones -->
@@ -186,21 +181,8 @@ Teamfit - Proyectos a Asignar Recursos
     <!-- Inicialización de DataTables con AJAX -->
     <script>
         $(document).ready(function() {
-            $('#totalesTable').DataTable({
-                "processing": true,
-                "serverSide": true,
-                "ajax": {
-                    "url": "{% url 'recursos_asignados_data' %}",
-                    "type": "GET"
-                },
-                "columns": [
-                    { "data": "proyecto__nombre" },
-                    { "data": "total_horas_semanales" },
-                    { "data": "semana" }
-                ]
-            });
-
-            $('#proyectosTable').DataTable({
+            // Inicialización de las tablas DataTables
+            const proyectosTable = $('#proyectosTable').DataTable({
                 "processing": true,
                 "serverSide": true,
                 "ajax": {
@@ -211,11 +193,28 @@ Teamfit - Proyectos a Asignar Recursos
                     { "data": "nombre" },
                     { "data": "duracion_semanas" },
                     { "data": "horas_demandadas" },
-                    { "data": "tipo_proyecto__prioridad" }
-                ]
+                    { "data": "tipo_proyecto__prioridad" },
+                    { "data": "rol_requerido" }
+                ],
+                "order": [[2, 'asc']]
             });
 
-            $('#asignacionesTable').DataTable({
+            const totalesTable = $('#totalesTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "{% url 'recursos_asignados_data' %}",
+                    "type": "GET"
+                },
+                "columns": [
+                    { "data": "proyecto__nombre" },
+                    { "data": "total_horas_semanales" },
+                    { "data": "semana" }
+                ],
+                "order": [[2, 'asc']] // Ordena por la columna 'semana' de forma ascendente por defecto
+            });
+
+            const asignacionesTable = $('#asignacionesTable').DataTable({
                 "processing": true,
                 "serverSide": true,
                 "ajax": {
@@ -227,21 +226,23 @@ Teamfit - Proyectos a Asignar Recursos
                     { "data": "recurso__nombre" },
                     { "data": "semana" },
                     { "data": "horas_asignadas" }
-                ]
+                ],
+                "order": [[2, 'asc']]
             });
 
             // Manejo del formulario de asignación de recursos con AJAX
             $('#asignacionForm').on('submit', function(e) {
                 e.preventDefault();
-
                 $.ajax({
                     url: $(this).attr('action'),
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
                         $('#mensaje').removeClass('alert-danger').addClass('alert-success').text(response).show();
-                        $('#totalesTable').DataTable().ajax.reload();
-                        $('#proyectosTable').DataTable().ajax.reload();
+                        // Recarga de las tablas
+                        totalesTable.ajax.reload();
+                        proyectosTable.ajax.reload();
+                        asignacionesTable.ajax.reload();
                     },
                     error: function(xhr) {
                         $('#mensaje').removeClass('alert-success').addClass('alert-danger').text(xhr.responseText).show();
@@ -252,16 +253,16 @@ Teamfit - Proyectos a Asignar Recursos
             // Manejo del formulario de eliminación de asignaciones con AJAX
             $('#eliminarAsignacionesForm').on('submit', function(e) {
                 e.preventDefault();
-
                 $.ajax({
                     url: $(this).attr('action'),
                     type: 'POST',
                     data: $(this).serialize(),
                     success: function(response) {
                         $('#mensaje').removeClass('alert-danger').addClass('alert-success').text('Asignaciones eliminadas con éxito.').show();
-                        $('#totalesTable').DataTable().ajax.reload();
-                        $('#proyectosTable').DataTable().ajax.reload();
-                        $('#asignacionesTable').DataTable().ajax.reload();
+                        // Recarga de las tablas
+                        totalesTable.ajax.reload();
+                        proyectosTable.ajax.reload();
+                        asignacionesTable.ajax.reload();
                     },
                     error: function(xhr) {
                         $('#mensaje').removeClass('alert-success').addClass('alert-danger').text(xhr.responseText).show();
