@@ -58,6 +58,7 @@ class Asignacion(models.Model):
     recurso = models.ForeignKey(Recurso, on_delete=models.CASCADE)
     semana = models.IntegerField()
     horas_asignadas = models.IntegerField()
+    año = models.IntegerField(default=2024) 
 
     class Meta:
         db_table = "Asignacion"

@@ -1,27 +1,39 @@
 from django.urls import path
-from django.contrib.auth import views as auth_views
-from .views import asignaciones_data,proyectos_data,recursos_asignados_data,eliminar_asignaciones
-# , cargar_asignaciones
-from .views import subirProyectos, pagina_principal, ver_proyectos,subir_empleados,ver_proyectos_empleados, asignar_recursos,asignaciones_list, ejecutar_asignacion, asignaciones_list
-# limpiar_asignaciones, proyectos_a_asignar, limpiar_proyectos, 
+from .views import (
+    subirProyectos,
+    pagina_principal,
+    ver_proyectos,
+    asignaciones_list,
+    ejecutar_asignacion,
+    generar_excel_proyectos,
+    generar_excel_asignacion,
+    eliminar_asignaciones,
+    asignaciones_data,
+    horas_por_recurso_data,
+    horas_por_proyecto_data,
+    generar_excel_recursos
 
-urlpatterns = [ 
-    path('subirProyectos',subirProyectos, name="subirProyectos"),
-    path('', pagina_principal, name="index"),
-    path('subirProyectos/<upload>',subirProyectos, name="decidirSubida"),
+)
+
+urlpatterns = [
+    path('', pagina_principal, name='index'),
+    path('subirProyectos/', subirProyectos, name='subirProyectos'),
+    path('subirProyectos/<upload>/', subirProyectos, name='decidirSubida'),
     path('ver-proyectos/', ver_proyectos, name='ver_proyectos'),
-    path('subir_empleados/', subir_empleados, name='subir_empleados'),
-    path('ver_proyectos_empleados/', ver_proyectos_empleados, name='ver_proyectos_empleados'),
-    path('asignar_recursos/', asignar_recursos, name='asignar_recursos'),
-    # path('proyectos_a_asignar/', proyectos_a_asignar, name='proyectos_a_asignar'),
-    # path('limpiar_asignaciones/', limpiar_asignaciones, name='limpiar_asignaciones'),
-    # path('limpiar_proyectos/', limpiar_proyectos, name='limpiar_proyectos'),
+    
+    # Vistas relacionadas con la gestión de asignaciones y proyectos
     path('asignaciones/', asignaciones_list, name='asignaciones_list'),
-    # path('cargar_asignaciones/', cargar_asignaciones, name='cargar_asignaciones'),
-    path('asignaciones_data/', asignaciones_data, name='asignaciones_data'),
-    path('proyectos_data/', proyectos_data, name='proyectos_data'),
-    path('recursos_asignados_data/', recursos_asignados_data, name='recursos_asignados_data'),  # Nueva URL para los totales semanales
+    path('asignaciones/data/', asignaciones_data, name='asignaciones_data'),
+    path('horas_por_recurso_data/', horas_por_recurso_data, name='horas_por_recurso_data'),
+    path('horas_por_proyecto_data/', horas_por_proyecto_data, name='horas_por_proyecto_data'),
+
+    # Vistas nuevas para los reportes adicionales
+
+
+    # Acciones sobre las asignaciones y generación de reportes
     path('ejecutar_asignacion/', ejecutar_asignacion, name='ejecutar_asignacion'),
     path('eliminar-asignaciones/', eliminar_asignaciones, name='eliminar_asignaciones'),
+    path('generar-reporte/', generar_excel_proyectos, name='generar_reporte'),
+    path('generar-reporte2/', generar_excel_asignacion, name='generar_reporte2'),
+    path('generar-reporte-recursos/', generar_excel_recursos, name='generar_excel_recursos'),
 ]
-    # otras URLs...
