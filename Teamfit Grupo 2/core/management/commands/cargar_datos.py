@@ -30,8 +30,8 @@ class Command(BaseCommand):
                 Disponibilidad.objects.create(recurso=recurso, semana=semana, horas_disponibles=40)
 
         # Crear proyectos
-        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=80, rol_requerido="Ingeniero de Proyectos", semana_inicio=35, duracion_semanas=26)
-        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=20, rol_requerido="Jefe de Proyecto", semana_inicio=35, duracion_semanas=26)
+        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=80, rol_requerido="Ingeniero de Proyectos", semana_inicio=38, duracion_semanas=26)
+        Proyecto.objects.create(nombre="Desarrollo de Plataforma Web", tipo_proyecto=tp1, horas_demandadas=20, rol_requerido="Jefe de Proyecto", semana_inicio=38, duracion_semanas=26)
         
         Proyecto.objects.create(nombre="Implementación de ERP", tipo_proyecto=tp2, horas_demandadas=60, rol_requerido="Ingeniero de Proyectos", semana_inicio=38, duracion_semanas=52)
         Proyecto.objects.create(nombre="Implementación de ERP", tipo_proyecto=tp2, horas_demandadas=10, rol_requerido="Jefe de Proyecto", semana_inicio=38, duracion_semanas=52)
