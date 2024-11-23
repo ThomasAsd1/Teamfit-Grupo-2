@@ -1,0 +1,19 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block titlePage %}
+Teamfit - Diagramas
+{% endblock titlePage %}
+{% block titulo %}
+Gráficos
+{% endblock titulo %}
+{% block content %}
+    <div class="container">
+        <div>
+            <h1>{{mesg}}</h1>
+        </div>
+        <div>
+            {{ bar|safe }}
+            {{ line|safe }}
+        </div>
+    </div>
+{% endblock content %}
