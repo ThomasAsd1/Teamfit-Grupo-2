@@ -44,4 +44,10 @@ urlpatterns = [
     path('generar-reporte/', generar_excel_proyectos, name='generar_reporte'),
     path('generar-reporte2/', generar_excel_asignacion, name='generar_reporte2'),
     path('generar-reporte-recursos/', generar_excel_recursos, name='generar_excel_recursos'),
+    
+    #Urls Gestión de empleados
+    path('modificar_asignación/', listar_proyectos, name='modificar_asignación'),
+    path('editar_datos/<int:id>/', editar_datos, name='editar_datos'),
+    path('editar_asignaciones/', editar_asignaciones, name='editar_asignaciones'),
+    path('actualizar_asignaciones/', actualizar_asignaciones, name='actualizar_asignaciones'),
 ]

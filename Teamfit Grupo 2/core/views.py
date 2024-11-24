@@ -1528,3 +1528,38 @@ def disponibilidad(request):
         
     return render(request, 'core/disponibilidad.html', {'data': data_list})
 
+def listar_proyectos(request):
+    # Obtén los proyectos únicos de la tabla Asignacion usando distinct
+    proyectos = Asignacion.objects.values('proyecto__id', 'proyecto__proyecto').distinct()
+    # Pasa los proyectos al contexto para renderizarlos en el HTML
+    return render(request, 'core/modificar_asignación.html', {'proyectos': proyectos})
+
+def editar_asignaciones(request):
+    asignaciones = Asignacion.objects.all()  # Ajusta según el filtro necesario
+    return render(request, 'core/editar_asignaciones.html', {'asignaciones': asignaciones})
+
+def actualizar_asignaciones(request):
+    if request.method == 'POST':
+        if 'actualizar' in request.POST:
+            asignacion_id = request.POST['actualizar']
+            asignacion = get_object_or_404(Asignacion, id=asignacion_id)
+            
+            asignacion.semana = request.POST.get(f'semana_{asignacion_id}', asignacion.semana)
+
+            horas_asignadas = request.POST.get(f'horas_{asignacion_id}', asignacion.horas_asignadas)
+            horas_asignadas = horas_asignadas.replace(',', '.')
+            asignacion.horas_asignadas = horas_asignadas
+
+            try:
+                asignacion.save()
+                messages.success(request, f'Asignación {asignacion.id} actualizada correctamente.')
+            except ValueError as e:
+                messages.error(request, f'Error al actualizar la asignación: {e}')
+        elif 'eliminar' in request.POST:
+            asignacion_id = request.POST['eliminar']
+            asignacion = get_object_or_404(Asignacion, id=asignacion_id)
+            asignacion.delete()
+            messages.success(request, f'Asignación {asignacion.id} eliminada correctamente.')
+
+    # Redirigir a la página de editar datos con el id del proyecto para refrescar la vista
+    return redirect('editar_datos', id=request.POST.get('proyecto_id'))

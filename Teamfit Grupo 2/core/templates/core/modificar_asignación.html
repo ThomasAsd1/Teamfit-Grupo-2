@@ -1,0 +1,104 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="table-container mb-5">
+    <br>
+    <br>
+    <!-- Título de la tabla -->
+    <h2 class="table-title text-center mb-4">Listado de Proyectos Asignados</h2>
+    
+    <!-- Tabla con diseño mejorado -->
+    <table id="proyectosTable" class="table table-striped table-bordered display nowrap" style="width:100%">
+        <thead class="table-header">
+            <tr>
+                <th>ID del Proyecto</th>
+                <th>Nombre del Proyecto</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for proyecto in proyectos %}
+                <tr>
+                    <td>{{ proyecto.proyecto__id }}</td>
+                    <td>{{ proyecto.proyecto__proyecto }}</td>
+                    <td>
+                        <!-- Botón de editar con icono -->
+                        <a href="{% url 'editar_datos' proyecto.proyecto__id %}">
+                            <button class="btn btn-edit">
+                                <i class="fa fa-pencil"></i> Editar
+                            </button>
+                        </a>
+                        <!-- Botón de agregar empleado que redirige a la página de agregar empleados -->
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    /* Estilos directamente en el HTML para la tabla */
+    .table-container {
+        margin: 20px;
+    }
+
+    .table-title {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 20px; /* Asegura un espacio superior adecuado */
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th, .table td {
+        padding: 12px 15px;
+        text-align: left;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    /* Asegura que ambos botones tengan el mismo tamaño */
+    .table .btn-edit, .table .btn-primary {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px; /* Igual para ambos botones */
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 14px; /* Asegura que ambos botones tengan el mismo tamaño de fuente */
+        display: inline-block;
+        vertical-align: middle; /* Alineación vertical */
+        width: auto; /* Permite que los botones ajusten su tamaño */
+    }
+
+    /* Hover para ambos botones */
+    .table .btn-edit:hover {
+        background-color: #218838;
+    }
+
+    .table .btn-primary {
+        background-color: #007bff;
+    }
+
+    .table .btn-primary:hover {
+        background-color: #0056b3;
+    }
+
+    .table .btn-sm {
+        padding: 8px 16px; /* Ajustado para mantener el tamaño consistente */
+        font-size: 14px; /* Igualando tamaño de fuente */
+    }
+</style>
+{% endblock %}
