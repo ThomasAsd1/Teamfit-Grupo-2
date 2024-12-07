@@ -65,13 +65,21 @@ def obtener_tiempo_eliminacion():
     **Return**\n
     Retorna 2 valores: int(hora), int(minuto)
     """
-    parametro = Parametro.objects.filter(nombre_parametro='historial.mantener').first()
-    if parametro:
-        tiempo_realizar = parametro.valor.get('tiempo', [])
-        print(tiempo_realizar)
-    hora = tiempo_realizar['hora']
-    minuto = tiempo_realizar['minutos']
-    print(str(hora) + ' - ' + str(minuto))
+    hora = 2
+    minuto = 30
+    try:
+        parametro = Parametro.objects.filter(nombre_parametro='historial.mantener').first()
+        if parametro:
+            tiempo_realizar = parametro.valor.get('tiempo', [])
+            print(tiempo_realizar)
+        hora = tiempo_realizar['hora']
+        minuto = tiempo_realizar['minutos']
+        if(not hora and not minuto):
+            hora = 2
+            minuto = 30
+    except:
+        hora = 2
+        minuto = 30
     return int(hora), int(minuto)
 
 def obtener_frecuencia():
@@ -83,15 +91,21 @@ def obtener_frecuencia():
     **Return**\n
     Retorna: frecuencia
     """
-    parametro = Parametro.objects.filter(nombre_parametro='historial.mantener').first()
-    if parametro:
-        frecuencias = parametro.valor.get('valores_programacion', [])
-        opciones = ['A1', 'A2', 'A3']
-        for opcion in opciones:
-            if opcion in frecuencias:
-                frecuencia = opcion
-                break
-        print(frecuencia)
+    frecuencia = ''
+    try:
+        parametro = Parametro.objects.filter(nombre_parametro='historial.mantener').first()
+        if parametro:
+            frecuencias = parametro.valor.get('valores_programacion', [])
+            opciones = ['A1', 'A2', 'A3']
+            for opcion in opciones:
+                if opcion in frecuencias:
+                    frecuencia = opcion
+                    break
+            if not frecuencia:
+                frecuencia = 'A1'
+                
+    except:
+        frecuencia = 'A1'
     return frecuencia
 
 def obtener_dias():
@@ -110,7 +124,4 @@ def obtener_dias():
         dias_seleccionados = [opcion for opcion in opciones if opcion in dias_semana]
         nombres_dias = [PROGRAMACION_MAPPING[dia] for dia in dias_seleccionados]
         dias_cron = [int(dia[1]) - 1 for dia in dias_seleccionados]
-        print(nombres_dias)
-        print(dias_seleccionados)
-        print(dias_cron)
     return dias_cron, nombres_dias

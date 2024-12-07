@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 from os import path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,12 +22,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@cxyd1%d*-n&1r&g+@^($iyk3tns&obc1_59a#sex!2nex+@%f'
+SECRET_KEY = SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+#Add your own domain for the csrf to work in your sistem.
+CSRF_TRUSTED_ORIGINS = [
+    'https://teamfittesting.azurewebsites.net',
+    'http://127.0.0.1:8000/'
+]
 
 
 # Application definition
@@ -39,8 +46,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
-    #'django_plotly_dash',
-    #'apirest',
 ]
 
 MIDDLEWARE = [
@@ -51,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'Teamfit.urls'
@@ -58,7 +64,7 @@ ROOT_URLCONF = 'Teamfit.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -77,24 +83,19 @@ WSGI_APPLICATION = 'Teamfit.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'teamfit',
-        'USER': 'teamfitadmindb', #TeamfitAdminDB
-        'PASSWORD': 'zmLhdqM1otFuqG4', #zmLhdqM1otFuqG4
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'sslmode': 'require',
+        },
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -139,6 +140,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static/"),
+]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
 
 MEDIA_URL = '/media/'
@@ -158,10 +165,7 @@ STATICFILES_FINDERS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Establece el tiempo de expiración de la sesión en segundos
-#SESSION_COOKIE_AGE = 1020  # 1020 segundos = 18 minutos
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Cierra la sesión cuando se cierra el navegador
-#SESSION_SAVE_EVERY_REQUEST = True  # Renueva la sesión con cada request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 CSRF_COOKIE_SECURE = True  # Si estás usando HTTPS
 CSRF_COOKIE_HTTPONLY = False

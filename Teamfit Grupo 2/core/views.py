@@ -16,16 +16,15 @@ from .models import Asignacion, AsignacionControl, HorasPredecidas, proyectosSem
 from .forms import DispForm, UploadFileForm, LoginForm, CrearUsuarioAdmin
 from .forms import CategoriasForm , UsuarioForm, ProgramacionForm, EscenariosForm
 from .forms import CATEGORIAS_MAPPING, PROGRAMACION_MAPPING, ESCENARIOS_MAPPING
-#Importaciones de apis 
+#Importaciones de apis
 from .apis import cargar_empleados, enviar_datos_planning_slots, convertir_datos_asignacion
 #Importaciones de util
 from .utils import obtener_empleado, obtener_subcategorias, almacenarHistorial, cambiar_scheduler, obtener_campos_secundarios
 from .utils import obtener_valores_formulario_parametro, obtener_valores_formulario_parametro_escenarios, obtener_valores_formulario_parametro_programacion
-from .utils import obtener_proyectos_sin_asignar, verificarDf
+from .utils import obtener_proyectos_sin_asignar, verificarDf, MONTH_TRANSLATION
 #Importaciones de clusters_data
 from .clusters_data import realizar_clusterizacion
 #Importaciones de módulos de Python
-import locale
 import logging
 import requests
 import pandas as pd
@@ -295,14 +294,9 @@ def pagina_principal(request):
     total_proyectos = total_proyectos.count()
     
     proyectos = proyectosSemanas.objects.select_related('proyecto', 'horas').all()
-
-    try:
-        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Unix / Linux / MacOS
-    except locale.Error:
-        locale.setlocale(locale.LC_TIME, 'Spanish_Spain.1252')  # Windows
-    
     
     current_month = today.strftime('%B') #Deberia ser Octubre o 'October'.
+    current_month = MONTH_TRANSLATION.get(current_month, current_month)
     current_week = today.strftime('%U')
 
     # Calcular semanas restantes en el año
@@ -388,9 +382,7 @@ def crear_usuarios(request):
             try:
                 user = form.save()
                 cargo = form.cleaned_data.get('cargo')
-                user.save()
                 PerfUsr = PerfilUsuario.objects.update_or_create(user=user, cargo=cargo)
-                ##Se obtienen los datos del usuario creado
                 cat = {'Cat':'E', 'Sub':'2'}
                 almacenado = almacenarHistorial(cat, request.user)
                 messages=["Usuario creado con éxito"]
@@ -398,10 +390,10 @@ def crear_usuarios(request):
                 data['form'] = CrearUsuarioAdmin()
             except Exception as e:
                 merror=[f'Error guardando usuario. Intente de nuevo más tarde.']
+                data['merror'] = merror
                 print(e)
         else:
-            # Storing form errors
-            error_messages = form.errors.as_data()  # Returns a dict with field names as keys and errors as values
+            error_messages = form.errors.as_data()
             merror=[]
             for field, errors in error_messages.items():
                 field_label=form.FIELD_LABELS.get(field, field)
@@ -496,9 +488,6 @@ def editar_usuario(request, id):
         'merror' : merror
     }
     return render(request, 'core/editarUsuario.html', data)
-
-#Fin de la funcion para editar un usuario
-
 
 #Desactiva el usuario, validando si existe y si es superuser o no.
 def eliminarUsuarios(request, id):
@@ -766,10 +755,6 @@ def cluster(request):
 
 
 def carga_Odoo(request):
-    ###enviar_datos_planning_slot
-    ###tabla asignacion
-    ###obtienes la semana por convertir_datos_asignacion
-    ###id_empleado, id_recurso, horas_asignadas, fecha_inicio, fecha_fin, nombre_proyecto-semana
     if not request.user.is_authenticated:
         return redirect(iniciar_sesion)
     
@@ -855,11 +840,6 @@ def carga_Odoo(request):
                         f"perteneciente a la semana {asignacion['semana']} del año {asignacion['año']}."
                     )
                     messages.error(request, mensaje_error)
-                if(cont == 4):
-                    break
-            if(cont == 4): #eliminar el break antes de entregar
-                break
-            
         if success:
             messages.success(request, "El proceso se ha realizado correctamente.")
         return redirect(carga_Odoo)
@@ -870,6 +850,9 @@ def carga_Odoo(request):
 
 #Esta es la función que genera el exel de la tabla horas_por_recurso_data
 def generar_excel_proyectos(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     # Obtener el año y la semana desde el request (ajusta esto según tu lógica)
     anio = request.GET.get('anio')
     semana = request.GET.get('semana')
@@ -924,6 +907,9 @@ def generar_excel_proyectos(request):
 
 #Función que genera el exel de la segunda tabla
 def generar_excel_recursos(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     # Obtener el año y la semana desde el request (ajusta esto según tu lógica)
     anio = request.GET.get('anio')
     semana = request.GET.get('semana')
@@ -976,6 +962,8 @@ def generar_excel_recursos(request):
 
 #Generar Reportes de Asignaciónes
 def generar_excel_asignacion(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
     # Obtener el formato seleccionado desde el request
     formato = request.GET.get('formato')
 
@@ -1070,6 +1058,9 @@ def busqueda_de_datos(queryset, search_value, search_fields):
 
 # PRIMERA TABLA
 def horas_por_recurso_data(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     order_column = request.GET.get('order[0][column]', 0)
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
@@ -1110,6 +1101,9 @@ def horas_por_recurso_data(request):
 
 # Recursos agrupados por proyecto (SEGUNDA TABLA)
 def horas_por_proyecto_data(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     order_column = request.GET.get('order[0][column]', 0)
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
@@ -1146,6 +1140,9 @@ def horas_por_proyecto_data(request):
 
 # TERCERA TABLA
 def asignaciones_data(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     order_column = request.GET.get('order[0][column]', 0)
     order_dir = request.GET.get('order[0][dir]', 'asc')
 
@@ -1238,6 +1235,9 @@ def asignaciones_list(request):
 logger = logging.getLogger(__name__)
 
 def ejecutar_asignacion(request):
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     if request.method == 'POST':
         try:
             control, created = AsignacionControl.objects.get_or_create(id=1)  # Usa un único registro para controlar
@@ -1248,12 +1248,21 @@ def ejecutar_asignacion(request):
                 if control.fecha_ultimo_ejecucion == datetime.today():
                     logger.warning("Intento de ejecutar la asignación más de una vez en el mismo día.")
                     return HttpResponse("La asignación ya ha sido ejecutada hoy.", status=400)
-            
-            
+                
             check_unasigned = obtener_proyectos_sin_asignar()
             if(not check_unasigned):
                 logger.warning("Intento de ejecutar la asignación cuando no hay proyectos.")
                 return HttpResponse("No existen proyectos para asignar. Verifique que se hayan subido los proyectos correctamente", status=400)
+            
+            if(check_unasigned.count() <=0):
+                logger.warning("Intento de ejecutar la asignación cuando no hay proyectos")
+                return HttpResponse("No existen proyectos para asignar. Verifique que se hayan subido los proyectos correctamente", status=400)
+
+            empleados = Empleado.objects.all()
+            if(empleados.count() <= 0):
+                logger.warning('Intento de asignar recursos sin empleados obtenidos')
+                return HttpResponse("Ha intentado realizar la asignación sin haber cargado empleados. "
+                                    "Por favor, carque los empleados a través del menú Disponibilidad", status=400)
 
             # Ejecutar la asignación de recursos y capturar el mensaje de retorno
             realizar_asignacion = asignar_recursos()
@@ -1310,6 +1319,9 @@ def eliminar_asignaciones(request):
     """
     Vista para eliminar todas las asignaciones actuales.
     """
+    if not request.user.is_authenticated:
+        return redirect(iniciar_sesion)
+    
     if request.method == 'POST':
         # Eliminar todas las asignaciones
         Asignacion.objects.all().delete()
@@ -1329,6 +1341,7 @@ def asignar_recursos():
     **Return**\n
         VariableReturn (tipo_dato): lore ipsum
     """
+    
     mensaje = ""
     asignacion_realizada = False  # Para verificar si se realizó alguna asignación
 
@@ -1528,38 +1541,3 @@ def disponibilidad(request):
         
     return render(request, 'core/disponibilidad.html', {'data': data_list})
 
-def listar_proyectos(request):
-    # Obtén los proyectos únicos de la tabla Asignacion usando distinct
-    proyectos = Asignacion.objects.values('proyecto__id', 'proyecto__proyecto').distinct()
-    # Pasa los proyectos al contexto para renderizarlos en el HTML
-    return render(request, 'core/modificar_asignación.html', {'proyectos': proyectos})
-
-def editar_asignaciones(request):
-    asignaciones = Asignacion.objects.all()  # Ajusta según el filtro necesario
-    return render(request, 'core/editar_asignaciones.html', {'asignaciones': asignaciones})
-
-def actualizar_asignaciones(request):
-    if request.method == 'POST':
-        if 'actualizar' in request.POST:
-            asignacion_id = request.POST['actualizar']
-            asignacion = get_object_or_404(Asignacion, id=asignacion_id)
-            
-            asignacion.semana = request.POST.get(f'semana_{asignacion_id}', asignacion.semana)
-
-            horas_asignadas = request.POST.get(f'horas_{asignacion_id}', asignacion.horas_asignadas)
-            horas_asignadas = horas_asignadas.replace(',', '.')
-            asignacion.horas_asignadas = horas_asignadas
-
-            try:
-                asignacion.save()
-                messages.success(request, f'Asignación {asignacion.id} actualizada correctamente.')
-            except ValueError as e:
-                messages.error(request, f'Error al actualizar la asignación: {e}')
-        elif 'eliminar' in request.POST:
-            asignacion_id = request.POST['eliminar']
-            asignacion = get_object_or_404(Asignacion, id=asignacion_id)
-            asignacion.delete()
-            messages.success(request, f'Asignación {asignacion.id} eliminada correctamente.')
-
-    # Redirigir a la página de editar datos con el id del proyecto para refrescar la vista
-    return redirect('editar_datos', id=request.POST.get('proyecto_id'))

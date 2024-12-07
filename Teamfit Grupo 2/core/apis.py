@@ -5,9 +5,10 @@ import re
 import ast
 import json
 from .models import Empleado
+import os
 
-URL_BASE = 'https://teamfit.opens-cloud.com/api/'
-API_KEY = 'RerPuUkAjjx7b2CDhw4XwDS30n3e5rH8qOh' 
+URL_BASE = os.getenv('WEBSITE_API')
+API_KEY = os.getenv('WEBSITE_KEY')
 
 """
 **DESCRIPCIÓN INICIAL**\n
@@ -84,7 +85,7 @@ def obtener_api_recursos(page=1,page_size=80):
         'api-key' : API_KEY
     }
     try:
-        response = requests.get(url, headers=headers)# , verify=False)
+        response = requests.get(url, headers=headers)
         if(response.status_code == 200):
             response = response.json()
         else:
@@ -117,11 +118,10 @@ def obtener_api_empleados(page=1,page_size=120):
         'api-key' : API_KEY
     }
     try:
-        response = requests.get(url, headers=headers)# , verify=False)
+        response = requests.get(url, headers=headers)
         if(response.status_code == 200):
             response = response.json()
         else:
-            print(f'Código de respuesta no es 200: \n--{response}')
             return False
             
         if(response['total']>0):
@@ -261,7 +261,7 @@ def obtener_trabajo_empleado(page=1, page_size=80, id=1):
     }
     
     try:
-        response = requests.get(url, headers=headers)# , verify=False)
+        response = requests.get(url, headers=headers)
         if(response.status_code == 200):
             response = response.json()
             trabajos = response['items']
@@ -298,7 +298,7 @@ def obtener_resource_calendar(page=1,page_size=80):
     }
 
     try:
-        response = requests.get(url, headers=headers)# , verify=False)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             data = response.json()
             if data['total'] > 0:

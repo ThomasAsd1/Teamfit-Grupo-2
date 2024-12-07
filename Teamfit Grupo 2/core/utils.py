@@ -7,6 +7,23 @@ from django.utils import timezone
 from .forms import CATEGORIAS_MAPPING, PROGRAMACION_MAPPING, ESCENARIOS_MAPPING
 from .forms import CategoriasForm, ProgramacionForm, EscenariosForm
 import pandas as pd
+
+#Diccionario de Traduccion:
+MONTH_TRANSLATION = {
+    "January": "Enero",
+    "February": "Febrero",
+    "March": "Marzo",
+    "April": "Abril",
+    "May": "Mayo",
+    "June": "Junio",
+    "July": "Julio",
+    "August": "Agosto",
+    "September": "Septiembre",
+    "October": "Octubre",
+    "November": "Noviembre",
+    "December": "Diciembre"
+}
+
 ##Funciones relacionadas con la asignación
 def obtener_empleado(proyecto_id, rol, semana, anio, cant_horas):
     """
@@ -467,7 +484,7 @@ def normalizar_cadena(cadena):
         return cadena
     return unicodedata.normalize('NFKD', cadena).encode('ascii', 'ignore').decode('utf-8').lower()
     
-def validar_columnas_nulas_df(df): 
+def validar_columnas_nulas_df(df):
     """
     **Valida que las columnas importantes no sean nulas**\n
     **Parametros**\n

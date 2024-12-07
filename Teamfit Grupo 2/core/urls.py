@@ -27,27 +27,14 @@ urlpatterns = [
     path('cluster', cluster, name='cluster'),
     path('cargaOdoo', carga_Odoo, name='cargaOdoo'),
     path('cargar_empleados/', vista_carga_empleados, name='cargar_empleados'),
-
-    
-    ###Ingresar las URLS del grupo 2 desde acá hacia abajo.
     path('asignaciones/', asignaciones_list, name='asignaciones_list'),
     path('asignaciones/data/', asignaciones_data, name='asignaciones_data'),
     path('horas_por_recurso_data/', horas_por_recurso_data, name='horas_por_recurso_data'),
     path('horas_por_proyecto_data/', horas_por_proyecto_data, name='horas_por_proyecto_data'),
-
-    # Vistas nuevas para los reportes adicionales
     path('disponibilidad/', disponibilidad, name='disponibilidad'),
-
-    # Acciones sobre las asignaciones y generación de reportes
     path('ejecutar_asignacion/', ejecutar_asignacion, name='ejecutar_asignacion'),
     path('eliminar-asignaciones/', eliminar_asignaciones, name='eliminar_asignaciones'),
     path('generar-reporte/', generar_excel_proyectos, name='generar_reporte'),
     path('generar-reporte2/', generar_excel_asignacion, name='generar_reporte2'),
     path('generar-reporte-recursos/', generar_excel_recursos, name='generar_excel_recursos'),
-    
-    #Urls Gestión de empleados
-    path('modificar_asignación/', listar_proyectos, name='modificar_asignación'),
-    path('editar_datos/<int:id>/', editar_datos, name='editar_datos'),
-    path('editar_asignaciones/', editar_asignaciones, name='editar_asignaciones'),
-    path('actualizar_asignaciones/', actualizar_asignaciones, name='actualizar_asignaciones'),
 ]
